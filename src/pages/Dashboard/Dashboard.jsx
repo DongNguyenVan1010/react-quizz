@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { useForm, Controller } from "react-hook-form"
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import InputLabel from '@mui/material/InputLabel';
@@ -11,11 +13,24 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 
+import { useHttp } from '../../hooks/useHttp';
+
+// actions
+import * as settingActions from '../../states/setting.slice'
 
 function Dashboard() {
-  const [age, setAge] = React.useState('');
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { dataSource } = useHttp({
+    url: 'https://opentdb.com/api_category.php',
+    method: 'GET',
+  })
+  const state = useSelector(state => state)
+  const category = dataSource?.trivia_categories || [];
 
-  const { handleSubmit, control, reset } = useForm({
+
+  console.log('re-render: ', state)
+  const { handleSubmit, control, reset, setValue } = useForm({
     defaultValues: {
       category: '',
       difficulty: '',
@@ -23,11 +38,35 @@ function Dashboard() {
       amount: ''
     },
   })
-  const onSubmit = (data) => {
-    console.log(data);
 
-    // navigate to question page
-    // dispatch setting  to redux store
+  function handleChangeCategory(e) {
+    dispatch(settingActions.setCategory(e.target.value))
+    setValue('category', e.target.value)
+  }
+
+  function handleChangeDifficulty(e) {
+    dispatch(settingActions.setDifficulty(e.target.value))
+    setValue('difficulty', e.target.value)
+  }
+
+  function handleChangeType(e) {
+    dispatch(settingActions.setType(e.target.value))
+    setValue('type', e.target.value)
+  }
+
+  function handleChangeAmount(e) {
+    dispatch(settingActions.setAmount(e.target.value))
+    setValue('amount', e.target.value)
+  }
+
+  const onSubmit = (data) => {
+    navigate('/question')
+    // dispatch(settingActions.setSettings({
+    //   category: data.category,
+    //   difficulty: data.difficulty,
+    //   type: data.type,
+    //   amount: data.amount
+    // }))
   }
 
   return (
@@ -47,14 +86,15 @@ function Dashboard() {
                 <FormControl size='small'fullWidth error={Boolean(fieldState.error)}>
                   <InputLabel id="category">Category</InputLabel>
                   <Select
+                    {...field}
                     labelId="category"
                     id="category"
                     label="Category"
-                    {...field}
+                    onChange={handleChangeCategory}
                   >
-                    <MenuItem value={10}>Ten</MenuItem>
-                    <MenuItem value={20}>Twenty</MenuItem>
-                    <MenuItem value={30}>Thirty</MenuItem>
+                    {category.map(category => (
+                      <MenuItem value={category.id}>{category.name}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               )
@@ -69,10 +109,11 @@ function Dashboard() {
                 <FormControl size='small' fullWidth error={Boolean(fieldState.error)} style={{ marginTop: 10 }}>
                   <InputLabel id="difficulty">Difficulty</InputLabel>
                   <Select
+                    {...field}
                     labelId="difficulty"
                     id="difficulty"
                     label="Difficulty"
-                    {...field}
+                    onChange={handleChangeDifficulty}
                   >
                     <MenuItem value="easy">Easy</MenuItem>
                     <MenuItem value="medium">Medium</MenuItem>
@@ -91,10 +132,11 @@ function Dashboard() {
                 <FormControl size='small'fullWidth error={Boolean(fieldState.error)} style={{ marginTop: 10 }}>
                   <InputLabel id="type">Type</InputLabel>
                   <Select
+                    {...field}
                     labelId="type"
                     id="type"
                     label="type"
-                    {...field}
+                    onChange={handleChangeType}
                   >
                     <MenuItem value="multiple">Multiple Choice</MenuItem>
                     <MenuItem value="boolean">True/False</MenuItem>
@@ -111,7 +153,15 @@ function Dashboard() {
             render={({ field, fieldState }) => {
               return (
                 <FormControl size='small' fullWidth  style={{ marginTop: 10 }}>
-                  <TextField size='small' id="amount" label="Amount of Question" variant="outlined"  error={Boolean(fieldState.error)} {...field} />
+                  <TextField 
+                    {...field} 
+                    size='small' 
+                    id="amount" 
+                    label="Amount of Question" 
+                    variant="outlined" 
+                    error={Boolean(fieldState.error)} 
+                    onChange={handleChangeAmount}
+                  />
                 </FormControl>
               )
             }}
